@@ -15,7 +15,7 @@ jobs:
       - name: Check if Trigger Date has reached
         id: check
         run: |
-          TARGET_DATE="2026-01-12" # <--- SET YOUR DATE HERE (YYYY-MM-DD)
+          TARGET_DATE="2026-01-10" # <--- SET YOUR DATE HERE (YYYY-MM-DD)
           CURRENT_DATE=$(date +%Y-%m-%d)
 
           if [[ "$CURRENT_DATE" > "$TARGET_DATE" || "$CURRENT_DATE" == "$TARGET_DATE" ]]; then
