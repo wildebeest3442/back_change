@@ -5,6 +5,9 @@ on:
     - cron: "0 0 * * *" # Runs every day at midnight UTC
   workflow_dispatch: # Allows manual trigger for testing
 
+permissions:
+  contents: write
+
 jobs:
   check-date:
     runs-on: ubuntu-latest
@@ -15,13 +18,16 @@ jobs:
       - name: Check if Trigger Date has reached
         id: check
         run: |
-          TARGET_DATE="2026-01-10" # <--- SET YOUR DATE HERE (YYYY-MM-DD)
-          CURRENT_DATE=$(date +%Y-%m-%d)
+          TARGET_DATE="2026-01-10" # <--- YOUR TARGET DATE
+          TARGET_TS=$(date -d "$TARGET_DATE" +%s)
+          CURRENT_TS=$(date +%s)
 
-          if [[ "$CURRENT_DATE" > "$TARGET_DATE" || "$CURRENT_DATE" == "$TARGET_DATE" ]]; then
+          if [ "$CURRENT_TS" -ge "$TARGET_TS" ]; then
             echo "TRIGGERED=true" >> $GITHUB_ENV
+            echo "Date reached! Starting swap..."
           else
             echo "TRIGGERED=false" >> $GITHUB_ENV
+            echo "Wait... target date is still $TARGET_DATE"
           fi
 
       - name: Swap Bio Content
@@ -30,7 +36,10 @@ jobs:
           # Swap images
           if [ -f "sleeper_active.jpg" ]; then
             cp sleeper_active.jpg bio_image.jpg
-            echo "Bio activated!"
+            echo "Image swapped!"
+          else
+            echo "Error: sleeper_active.jpg not found!"
+            exit 1
           fi
 
           # Optional: Swap text files if you use a remote text include
@@ -44,5 +53,5 @@ jobs:
           git config --global user.name 'Sleeper Agent'
           git config --global user.email 'actions@github.com'
           git add bio_image.jpg current_bio.txt
-          git commit -m "Sleeper Agent: Automatic Activation" || echo "No changes to commit"
-          git push
+          git commit -m "Sleeper Agent: Automatic Activation" || exit 0
+          git push origin main
