@@ -1,0 +1,48 @@
+name: Sleeper Agent Trigger
+
+on:
+  schedule:
+    - cron: "0 0 * * *" # Runs every day at midnight UTC
+  workflow_dispatch: # Allows manual trigger for testing
+
+jobs:
+  check-date:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check if Trigger Date has reached
+        id: check
+        run: |
+          TARGET_DATE="2026-01-12" # <--- SET YOUR DATE HERE (YYYY-MM-DD)
+          CURRENT_DATE=$(date +%Y-%m-%d)
+
+          if [[ "$CURRENT_DATE" > "$TARGET_DATE" || "$CURRENT_DATE" == "$TARGET_DATE" ]]; then
+            echo "TRIGGERED=true" >> $GITHUB_ENV
+          else
+            echo "TRIGGERED=false" >> $GITHUB_ENV
+          fi
+
+      - name: Swap Bio Content
+        if: env.TRIGGERED == 'true'
+        run: |
+          # Swap images
+          if [ -f "sleeper_active.jpg" ]; then
+            cp sleeper_active.jpg bio_image.jpg
+            echo "Bio activated!"
+          fi
+
+          # Optional: Swap text files if you use a remote text include
+          if [ -f "sleeper_active.txt" ]; then
+            cp sleeper_active.txt current_bio.txt
+          fi
+
+      - name: Commit and Push changes
+        if: env.TRIGGERED == 'true'
+        run: |
+          git config --global user.name 'Sleeper Agent'
+          git config --global user.email 'actions@github.com'
+          git add bio_image.jpg current_bio.txt
+          git commit -m "Sleeper Agent: Automatic Activation" || echo "No changes to commit"
+          git push
