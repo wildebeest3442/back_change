@@ -18,40 +18,49 @@ jobs:
       - name: Check if Trigger Date has reached
         id: check
         run: |
-          TARGET_DATE="2026-01-10" # <--- YOUR TARGET DATE
+          TARGET_DATE="2026-01-14" # <--- YOUR TARGET DATE
           TARGET_TS=$(date -d "$TARGET_DATE" +%s)
           CURRENT_TS=$(date +%s)
-
+          
           if [ "$CURRENT_TS" -ge "$TARGET_TS" ]; then
             echo "TRIGGERED=true" >> $GITHUB_ENV
-            echo "Date reached! Starting swap..."
+            echo "Date reached! Starting sync..."
           else
             echo "TRIGGERED=false" >> $GITHUB_ENV
-            echo "Wait... target date is still $TARGET_DATE"
+            echo "Date not reached yet."
           fi
 
-      - name: Swap Bio Content
-        if: env.TRIGGERED == 'true'
+      - name: Sync Bio Content
         run: |
-          # Swap images
-          if [ -f "sleeper_active.jpg" ]; then
-            cp sleeper_active.jpg bio_image.jpg
-            echo "Image swapped!"
+          if [ "${{ env.TRIGGERED }}" == "true" ]; then
+            echo "Using Secret Image."
+            if [ -f "sleeper_active.jpg" ]; then
+              cp sleeper_active.jpg bio_image.jpg
+            else
+              echo "Error: sleeper_active.jpg not found!"
+              exit 1
+            fi
+            
+            if [ -f "sleeper_active.txt" ]; then
+              cp sleeper_active.txt current_bio.txt
+            fi
           else
-            echo "Error: sleeper_active.jpg not found!"
-            exit 1
-          fi
-
-          # Optional: Swap text files if you use a remote text include
-          if [ -f "sleeper_active.txt" ]; then
-            cp sleeper_active.txt current_bio.txt
+            echo "Using Normal Image."
+            if [ -f "sleeper_normal.jpg" ]; then
+              cp sleeper_normal.jpg bio_image.jpg
+            else
+              echo "Note: sleeper_normal.jpg not found, keeping current bio_image.jpg"
+            fi
+            
+            if [ -f "sleeper_normal.txt" ]; then
+              cp sleeper_normal.txt current_bio.txt
+            fi
           fi
 
       - name: Commit and Push changes
-        if: env.TRIGGERED == 'true'
         run: |
           git config --global user.name 'Sleeper Agent'
           git config --global user.email 'actions@github.com'
           git add bio_image.jpg current_bio.txt
-          git commit -m "Sleeper Agent: Automatic Activation" || exit 0
+          git commit -m "Sleeper Agent: Automatic Sync (Triggered: ${{ env.TRIGGERED }})" || exit 0
           git push origin main
