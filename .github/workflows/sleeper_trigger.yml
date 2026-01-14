@@ -18,7 +18,7 @@ jobs:
       - name: Check if Trigger Date has reached
         id: check
         run: |
-          TARGET_DATE="2026-01-14" # <--- YOUR TARGET DATE
+          TARGET_DATE="2026-01-18" # <--- YOUR TARGET DATE
           TARGET_TS=$(date -d "$TARGET_DATE" +%s)
           CURRENT_TS=$(date +%s)
           
